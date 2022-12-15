@@ -1,7 +1,8 @@
 export type Uuid = string;
 
-export interface User {
+export interface Products {
     uuid: Uuid,
     name: string,
-    birthDate: Date
+    description: string,
+    price: number
 }

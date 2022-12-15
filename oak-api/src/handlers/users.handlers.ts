@@ -1,12 +1,29 @@
 import { Context, helpers } from "../../../deps.ts"
 import logger from "../middlewares/logger.ts";
-import { User } from "../types/users.types.ts";
+import { Products } from "../types/users.types.ts";
 
-const DB_USERS: User[] = [];
-DB_USERS.push({uuid: "1", name: 'John Lennon', birthDate: new Date()});
-DB_USERS.push({uuid: "2", name: 'Ringo Star', birthDate: new Date()});
-DB_USERS.push({uuid: "3", name: 'George Harrison', birthDate: new Date()});
-DB_USERS.push({uuid: "4", name: 'Paul McCartney', birthDate: new Date()});
+const DB_PRODS: Products[] = [];
+DB_PRODS.push({uuid: "1", name: 'Notebook Dell Latitude', description: 'I5 Septima generación, 15 inch, SSD 256Gb, RAM 8Gb', price:600});
+DB_PRODS.push({uuid: "2", name: 'Desktop Dell Inspiron', description: 'I7 Quinta generación, SSD 256Gb, RAM 16Gb', price:825});
+DB_PRODS.push({uuid: "3", name: 'Notebook Lenovo Legion', description: 'Ryzen 9, SSD 500Gb, RAM 16Gb', price:1215});
+DB_PRODS.push({uuid: "4", name: 'Desktop Lenovo AIO', description: 'I3 Quinta generación, SSD 256Gb, 22 inchs, RAM 8Gb', price:983});
+
+export const raiz = async (ctx: Context) => {
+    try {
+        ctx.response.status = 200;
+        logger.debug(`status: ${ctx.response.status} method: findAll handler`);
+
+        const text = await Deno.readTextFile('./index.html');
+        ctx.response.headers.set("Content-Type", "text/html")        
+        ctx.response.body = await text;
+            
+    } catch (error) {
+        ctx.response.status = 500;
+
+        logger.error(`status: ${ctx.response.status} ${error}`);
+        ctx.response.body = {code: '99', msg: error};
+    }
+}
 
 
 export const findAll = async (ctx: Context) => {
@@ -14,7 +31,7 @@ export const findAll = async (ctx: Context) => {
         ctx.response.status = 200;
         logger.debug(`status: ${ctx.response.status} method: findAll handler`);
 
-        ctx.response.body = await {code: '00', data: DB_USERS};
+        ctx.response.body = await {code: '00', data: DB_PRODS};
     } catch (error) {
         ctx.response.status = 500;
 
@@ -23,15 +40,15 @@ export const findAll = async (ctx: Context) => {
     }
 }
 
-export const findUser = async (ctx: Context) =>{
+export const findProd = async (ctx: Context) =>{
     try {
-        const { userId } = helpers.getQuery(ctx, {mergeParams: true});
-        const user = await DB_USERS.find((u) => u.uuid == userId);
+        const { prodId } = helpers.getQuery(ctx, {mergeParams: true});
+        const prod = await DB_PRODS.find((u) => u.uuid == prodId);
 
-        if (user) {
-            ctx.response.body = await {code: '00', data: user};
+        if (prod) {
+            ctx.response.body = await {code: '00', data: prod};
         } else {
-            ctx.response.body = await {code: '01', msg: `Usuario con id ${userId} no encontrado.`};
+            ctx.response.body = await {code: '01', msg: `Producto con id ${prodId} no encontrado.`};
         }
     } catch (error) {
         ctx.response.status = 500;
@@ -41,22 +58,23 @@ export const findUser = async (ctx: Context) =>{
     }
 }
 
-export const createUser = async (ctx: Context ) => {
+export const createProd = async (ctx: Context ) => {
     try {
         ctx.response.status = 201;
         logger.debug(`status: ${ctx.response.status} method: createUser handler`);
 
-        const { name, birthDate } = await ctx.request.body().value;
+        const { name, description, price } = await ctx.request.body().value;
        
-        const newId = Number(DB_USERS[DB_USERS.length - 1].uuid) + 1;
-        const user: User = {
+        const newId = Number(DB_PRODS[DB_PRODS.length - 1].uuid) + 1;
+        const prod: Products = {
             uuid: newId.toString(),
             name: name,
-            birthDate: new Date(birthDate)
+            description: description,
+            price: price
         }
-        DB_USERS.push(user)
+        DB_PRODS.push(prod)
 
-        ctx.response.body = await {code: '00', data: user};
+        ctx.response.body = await {code: '00', data: prod};
     } catch (error) {
         ctx.response.status = 500;
 
@@ -65,21 +83,21 @@ export const createUser = async (ctx: Context ) => {
     }
 }
 
-export const updateUser = async (ctx: Context ) => {
+export const updateProd = async (ctx: Context ) => {
     try {
         ctx.response.status = 202;
         logger.debug(`status: ${ctx.response.status} method: updateUser handler`);
 
-        const { userId } = helpers.getQuery(ctx, {mergeParams: true});
-        const userIndex = await DB_USERS.findIndex((u) => u.uuid == userId);
+        const { prodId } = helpers.getQuery(ctx, {mergeParams: true});
+        const prodIndex = await DB_PRODS.findIndex((u) => u.uuid == prodId);
 
-        if (userIndex) {
-            const { name, birthDate } = await ctx.request.body().value;
-            DB_USERS.splice(userIndex, 1, {uuid: userId, name, birthDate: new Date(birthDate)});
+        if (prodIndex) {
+            const { name, description, price } = await ctx.request.body().value;
+            DB_PRODS.splice(prodIndex, 1, {uuid: prodId, name, description, price});
            
-            ctx.response.body = {code: '00', data: {uuid: userId, name, birthDate}}
+            ctx.response.body = {code: '00', data: {uuid: prodId, name, description, price}}
         } else {
-            ctx.response.body = {code: '01', msg: `Usuario con id ${userId} no encontrado.`};
+            ctx.response.body = {code: '01', msg: `Producto con id ${prodId} no encontrado.`};
         }
     } catch (error) {
         ctx.response.status = 500;
@@ -89,20 +107,20 @@ export const updateUser = async (ctx: Context ) => {
     }
 }
 
-export const deleteUser = async (ctx: Context ) => {
+export const deleteProd = async (ctx: Context ) => {
     try {
         ctx.response.status = 200;
         logger.debug(`status: ${ctx.response.status} method: deleteUser handler`);
 
-        const { userId } = helpers.getQuery(ctx, {mergeParams: true});
-        const userIndex = await DB_USERS.findIndex((u) => u.uuid == userId);
+        const { prodId } = helpers.getQuery(ctx, {mergeParams: true});
+        const prodIndex = await DB_PRODS.findIndex((u) => u.uuid == prodId);
 
-        if (userIndex) {
-            DB_USERS.splice(userIndex, 1);
+        if (prodIndex) {
+            DB_PRODS.splice(prodIndex, 1);
 
-            ctx.response.body = {code: '00', msg: `Usuario con id ${userId} eliminado`}
+            ctx.response.body = {code: '00', msg: `Producto con id ${prodId} eliminado`}
         } else {
-            ctx.response.body = {code: '01', msg: `Usuario con id ${userId} no encontrado.`};
+            ctx.response.body = {code: '01', msg: `Producto con id ${prodId} no encontrado.`};
         }
     } catch (error) {
         ctx.response.status = 500;
@@ -112,18 +130,3 @@ export const deleteUser = async (ctx: Context ) => {
     }
 }
 
-export const usr = async (ctx: Context) => {
-    try {
-        ctx.response.status = 200;
-        logger.debug(`status: ${ctx.response.status} method: findAll handler`);
-        const html = `<html><body><h1>Hola mundo!</h1></body></html>`;
-  
-        ctx.response.body = await html;
-        /* ctx.response.body = await {code: '00', data: DB_USERS}; */
-    } catch (error) {
-        ctx.response.status = 500;
-
-        logger.error(`status: ${ctx.response.status} ${error}`);
-        ctx.response.body = {code: '99', msg: error};
-    }
-}
